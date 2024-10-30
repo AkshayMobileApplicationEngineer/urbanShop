@@ -1,244 +1,188 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
-import 'PrivacyNotesScreen.dart';
-import 'forgetScreen.dart';
-import 'mainScreen.dart';
+import 'forgot_password_screen.dart';
 
 class AuthScreen extends StatefulWidget {
-  static const String routeName = '/auth';
-
-  const AuthScreen({super.key});
-
   @override
   _AuthScreenState createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  bool showPassword = false;
-  bool keepSignedIn = false;
+  bool isSignUp = false;
   final _formKey = GlobalKey<FormState>();
+  late String _email, _password, _confirmPassword;
 
-  final String dummyEmail = "user@example.com";
-  final String dummyPassword = "password123";
+  void toggleView() {
+    setState(() {
+      isSignUp = !isSignUp;
+    });
+  }
+
+  void showPrivacyPolicy() {
+    showDialog(
+      context: context,
+      builder: (context) => _privacyPolicyDialog(),
+    );
+  }
+
+  Widget _signInOrSignUpForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'Email is required';
+              }
+              if (value != 'dummy@example.com') {
+                return 'Invalid credentials';
+              }
+              return null;
+            },
+            onSaved: (value) => _email = value!,
+          ),
+          SizedBox(height: 16),
+          TextFormField(
+            decoration: const InputDecoration(
+              labelText: 'Password',
+              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            obscureText: true,
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'Password is required';
+              }
+              if (value != 'dummy') {
+                return 'Invalid credentials';
+              }
+              return null;
+            },
+            onSaved: (value) => _password = value!,
+          ),
+          SizedBox(height: 16),
+          if (isSignUp)
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: 'Confirm Password',
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              obscureText: true,
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'Confirm Password is required';
+                }
+                if (value != _password) {
+                  return 'Passwords do not match';
+                }
+                return null;
+              },
+              onSaved: (value) => _confirmPassword = value!,
+            ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isSignUp ? Colors.blue : Colors.green,
+              padding: EdgeInsets.symmetric(vertical: 16),
+            ),
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                _formKey.currentState!.save();
+                // Implement your sign in or sign up logic here
+                print('Email: $_email, Password: $_password');
+              }
+            },
+            child: Text(
+              isSignUp ? 'Sign Up' : 'Sign In',
+              style: TextStyle(fontSize: 18),
+            ),
+          ),
+          SizedBox(height: 16),
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+              );
+            },
+            child: Text('Forgot Password?', style: TextStyle(fontSize: 16)),
+          ),
+          TextButton(
+            onPressed: toggleView,
+            child: Text(
+              isSignUp ? 'Already have an account? Sign In' : 'Don’t have an account? Sign Up',
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dummyCredentials() {
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        Text(
+          'Demo Credentials',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          'Email: dummy@example.com',
+          style: TextStyle(fontSize: 12),
+        ),
+        Text(
+          'Password: dummy',
+          style: TextStyle(fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _privacyPolicyDialog() {
+    return AlertDialog(
+      title: const Text('Privacy Policy'),
+      scrollable: true,
+      content: const Text('Your privacy policy content goes here.'),
+      actions: [
+        TextButton(
+          child: const Text('Close'),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF0E7C6),
-        title: const Text(
-          "UrbanBasket",
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: Text(isSignUp ? 'Sign Up' : 'Sign In'),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 400),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  "Sign in with Email and Password",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF4A4A4A),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-                _buildTextField(
-                  controller: emailController,
-                  label: 'Email',
-                  isPassword: false,
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: passwordController,
-                  label: 'Password',
-                  isPassword: true,
-                  obscureText: !showPassword,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildCheckboxTile(
-                      "Show Password",
-                      showPassword,
-                          (value) => setState(() => showPassword = value!),
-                    ),
-                    _buildCheckboxTile(
-                      "Keep Signed In",
-                      keepSignedIn,
-                          (value) => setState(() => keepSignedIn = value!),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-                _buildSignInButton(),
-                const SizedBox(height: 15),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const ForgotPasswordScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "Forgot Password?",
-                    style: TextStyle(color: Colors.blue),
-                  ),
-                ),
-                const Divider(thickness: 1),
-                const Center(
-                  child: Text(
-                    "New to UrbanBasket Shopping App?",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                _buildCreateAccountButton(),
-                const SizedBox(height: 10),
-                _buildPrivacyButton(),
-                const Spacer(),
-                _buildFooter(),
+                _signInOrSignUpForm(),
+                SizedBox(height: 20),
+                _dummyCredentials(),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required bool isPassword,
-    bool obscureText = false,
-  }) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      keyboardType: isPassword ? TextInputType.visiblePassword : TextInputType.emailAddress,
-      obscureText: obscureText,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $label';
-        }
-        if (isPassword && value.length < 6) {
-          return 'Password must be at least 6 characters';
-        }
-        if (!isPassword && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-          return 'Please enter a valid email address';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildCheckboxTile(String title, bool value, Function(bool?) onChanged) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Checkbox(
-          value: value,
-          onChanged: onChanged,
-          activeColor: const Color(0xFFE0A163),
-        ),
-        Text(title),
-      ],
-    );
-  }
-
-  Widget _buildSignInButton() {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFE0A163),
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      onPressed: () {
-        if (_formKey.currentState!.validate()) {
-          if (emailController.text == dummyEmail &&
-              passwordController.text == dummyPassword) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => MainScreen(),
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Invalid email or password')),
-            );
-          }
-        }
-      },
-      child: const Text(
-        "Sign In",
-        style: TextStyle(color: Colors.white, fontSize: 16),
-      ),
-    );
-  }
-
-  Widget _buildCreateAccountButton() {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFE0A163),
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      onPressed: () {
-        print("Create an UrbanBasket Account");
-      },
-      child: const Text(
-        "Create an UrbanBasket Account",
-        style: TextStyle(color: Colors.white, fontSize: 16),
-      ),
-    );
-  }
-
-  Widget _buildPrivacyButton() {
-    return TextButton(
-      onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const PrivacyNotesScreen(),
-          ),
-        );
-      },
-      child: const Text(
-        "Conditions of the Privacy Notes",
-        style: TextStyle(color: Colors.blue),
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      color: const Color(0xFFE6E4D9),
-      child: Center(
-        child: Text(
-          "Created by @MeliveAkshay  Version v1.0.0",
-          style: const TextStyle(color: Colors.black54, fontSize: 12),
         ),
       ),
     );
